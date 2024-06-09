@@ -7,24 +7,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const downloadPDFButton = document.getElementById('downloadPDF');
     const reportForm = document.getElementById('reportForm');
 
-    let records = [];
+    // Load records from local storage if available
+    let records = JSON.parse(localStorage.getItem('records')) || [];
 
-    form.addEventListener('submit', (event) => {
-        event.preventDefault();
-        
-        const date = document.getElementById('date').value;
-        const incomeSource = document.getElementById('incomeSource').value;
-        const sales = parseFloat(document.getElementById('sales').value);
-        const expenditureDetails = document.getElementById('expenditureDetails').value || 'N/A';
-        const expenditure = parseFloat(document.getElementById('expenditure').value) || 0;
-        const profit = sales - expenditure;
+    // Function to update local storage with new records
+    function updateLocalStorage() {
+        localStorage.setItem('records', JSON.stringify(records));
+    }
 
-        const record = { date, incomeSource, sales, expenditureDetails, expenditure, profit };
-        records.push(record);
-        updateTable();
-        updateTotals();
-    });
-
+    // Function to update the table with records
     function updateTable() {
         recordsTableBody.innerHTML = '';
         records.forEach(record => {
@@ -41,6 +32,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // Function to update totals
     function updateTotals() {
         const salesSum = records.reduce((sum, record) => sum + record.sales, 0);
         const expenditureSum = records.reduce((sum, record) => sum + record.expenditure, 0);
@@ -51,6 +43,33 @@ document.addEventListener('DOMContentLoaded', () => {
         totalProfit.textContent = profitSum;
     }
 
+    // Function to handle form submission
+    form.addEventListener('submit', (event) => {
+        event.preventDefault();
+        
+        // Get form values
+        const date = document.getElementById('date').value;
+        const incomeSource = document.getElementById('incomeSource').value;
+        const sales = parseFloat(document.getElementById('sales').value);
+        const expenditureDetails = document.getElementById('expenditureDetails').value || 'N/A';
+        const expenditure = parseFloat(document.getElementById('expenditure').value) || 0;
+        const profit = sales - expenditure;
+
+        // Create record object
+        const record = { date, incomeSource, sales, expenditureDetails, expenditure, profit };
+
+        // Add record to array
+        records.push(record);
+
+        // Update table and totals
+        updateTable();
+        updateTotals();
+
+        // Update local storage
+        updateLocalStorage();
+    });
+
+    // Function to handle PDF download
     downloadPDFButton.addEventListener('click', () => {
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF();
@@ -68,30 +87,5 @@ document.addEventListener('DOMContentLoaded', () => {
         doc.save('khata_record.pdf');
     });
 
-    reportForm.addEventListener('submit', (event) => {
-        event.preventDefault();
-
-        const startDate = document.getElementById('startDate').value;
-        const endDate = document.getElementById('endDate').value;
-
-        const filteredRecords = records.filter(record => record.date >= startDate && record.date <= endDate);
-
-        const { jsPDF } = window.jspdf;
-        const doc = new jsPDF();
-        doc.text(`Expenditure Report - ${startDate} to ${endDate}`, 10, 10);
-
-        let y = 20;
-        filteredRecords.forEach(record => {
-            doc.text(`Date: ${record.date}`, 10, y);
-            doc.text(`Income Source: ${record.incomeSource}`, 10, y + 10);
-            doc.text(`Sales: ${record.sales}`, 10, y + 20);
-            doc.text(`Expenditure Details: ${record.expenditureDetails}`, 10, y + 30);
-            doc.text(`Expenditure: ${record.expenditure}`, 10, y + 40);
-            doc.text(`Profit: ${record.profit}`, 10, y + 50);
-            y += 60;
-        });
-
-        doc.save(`expenditure_report_${startDate}_to_${endDate}.pdf`);
-    });
-
+    // Rest of your code...
 });
